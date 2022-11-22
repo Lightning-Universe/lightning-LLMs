@@ -3,7 +3,7 @@ __author__ = "Lightning-AI et al."
 __author_email__ = "name@lightning.ai"
 __license__ = "TBD"
 __copyright__ = f"Copyright (c) 2020-2021, {__author__}."
-__homepage__ = "https://github.com/Lightning-AI/lightning-sandbox"
+__homepage__ = "https://github.com/Lightning-AI/lightning-LLMs"
 __docs__ = "PyTorch Lightning Sample project."
 # todo: consider loading Readme here...
 __long_doc__ = """
