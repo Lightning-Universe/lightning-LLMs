@@ -22,8 +22,8 @@ jobs:
   check-package:
     uses: Lightning-AI/utilities/.github/workflows/check-package.yml@v0.1.0
     with:
-      import-name: "pl_sandbox"
-      pypi-name: "lightning-sandbox"
+      import-name: "lit_llms"
+      pypi-name: "lightning-LLMs"
 
 # TODO: use also this after resolving bug with actions: https://github.com/Lightning-AI/utilities/pull/51
 #  check-docs:

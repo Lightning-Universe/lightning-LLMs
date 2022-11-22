@@ -1,6 +1,6 @@
 import pytest
 
-from pl_sandbox.my_module import my_sample_func
+from lit_llms.my_module import my_sample_func
 
 
 @pytest.mark.parametrize(
