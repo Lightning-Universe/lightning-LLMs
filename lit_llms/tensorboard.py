@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 from subprocess import Popen
 from time import time
-from typing import Optional, Type
+from typing import Any, List, Mapping, Optional, Type
 from uuid import uuid4
 
 import lightning as L
@@ -12,14 +12,14 @@ from fsspec.implementations.local import LocalFileSystem
 
 
 class DriveTensorBoardLogger(L.pytorch.loggers.TensorBoardLogger):
-    def __init__(self, *args, drive: L.app.storage.Drive, refresh_time: int = 5, **kwargs):
+    def __init__(self, *args: Any, drive: L.app.storage.Drive, refresh_time: int = 5, **kwargs: Any):
         super().__init__(*args, **kwargs)
         self.timestamp = None
         self.drive = drive
         self.refresh_time = refresh_time
 
     @L.pytorch.utilities.rank_zero.rank_zero_only
-    def log_metrics(self, metrics, step) -> None:
+    def log_metrics(self, metrics: Mapping[str, float], step: int) -> None:
         super().log_metrics(metrics, step)
         if self.timestamp is None:
             self._upload_to_storage()
@@ -28,7 +28,7 @@ class DriveTensorBoardLogger(L.pytorch.loggers.TensorBoardLogger):
             self._upload_to_storage()
             self.timestamp = time()
 
-    def _upload_to_storage(self):
+    def _upload_to_storage(self) -> None:
         fs = L.app.storage.path._filesystem()
         fs.invalidate_cache()
 
@@ -65,7 +65,7 @@ class DriveTensorBoardLogger(L.pytorch.loggers.TensorBoardLogger):
 
 
 class TensorBoardWork(L.app.LightningWork):
-    def __init__(self, *args, drive: L.app.storage.Drive, **kwargs):
+    def __init__(self, *args: Any, drive: L.app.storage.Drive, **kwargs: Any):
         super().__init__(
             *args,
             parallel=True,
@@ -75,7 +75,7 @@ class TensorBoardWork(L.app.LightningWork):
 
         self.drive = drive
 
-    def run(self):
+    def run(self) -> None:
 
         use_localhost = not L.app.utilities.cloud.is_running_in_cloud()
 
@@ -116,7 +116,7 @@ class TensorBoardWork(L.app.LightningWork):
                             parent.mkdir(exist_ok=True, parents=True)
                     fs.get(source_path, str(Path(target_path).resolve()))
 
-    def on_exit(self):
+    def on_exit(self) -> None:
         assert self._process
         self._process.kill()
 
@@ -131,16 +131,16 @@ class MultiNodeLightningTrainerWithTensorboard(L.LightningFlow):
         super().__init__()
         tb_drive = L.app.storage.Drive("lit://tb_drive")
         self.tensorboard_work = TensorBoardWork(drive=tb_drive)
-        self.text_classificaion = L.app.components.LightningTrainerMultiNode(
+        self.multinode = L.app.components.LightningTrainerMultiNode(
             work_cls,
             num_nodes=num_nodes,
             cloud_compute=cloud_compute,
             tb_drive=tb_drive,
         )
 
-    def run(self, *args, **kwargs) -> None:
+    def run(self, *args: Any, **kwargs: Any) -> None:
         self.tensorboard_work.run()
-        self.text_classificaion.run()
+        self.multinode.run(*args, **kwargs)
 
-    def configure_layout(self):
+    def configure_layout(self) -> List[Mapping[str, str]]:
         return [{"name": "Training Logs", "content": self.tensorboard_work.url}]
