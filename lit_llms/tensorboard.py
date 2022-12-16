@@ -14,7 +14,7 @@ from fsspec.implementations.local import LocalFileSystem
 class DriveTensorBoardLogger(L.pytorch.loggers.TensorBoardLogger):
     def __init__(self, *args: Any, drive: L.app.storage.Drive, refresh_time: int = 5, **kwargs: Any):
         super().__init__(*args, **kwargs)
-        self.timestamp = None
+        self.timestamp: Optional[float] = None
         self.drive = drive
         self.refresh_time = refresh_time
 
@@ -62,6 +62,8 @@ class DriveTensorBoardLogger(L.pytorch.loggers.TensorBoardLogger):
         exception = next((e for e in results if isinstance(e, Exception)), None)
         if exception:
             raise exception
+
+        return None
 
 
 class TensorBoardWork(L.app.LightningWork):
