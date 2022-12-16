@@ -1,12 +1,14 @@
 import concurrent.futures
 import os
 import sys
+from functools import partial
 from pathlib import Path
 from subprocess import Popen
 from time import time
 from typing import Any, List, Mapping, Optional, Type
 from uuid import uuid4
 
+import fsspec
 import lightning as L
 from fsspec.implementations.local import LocalFileSystem
 
@@ -35,34 +37,33 @@ class DriveTensorBoardLogger(L.pytorch.loggers.TensorBoardLogger):
         source_path = Path(self.log_dir).resolve()
         destination_path = self.drive._to_shared_path(self.log_dir, component_name=self.drive.component_name)
 
-        def _copy(from_path: Path, to_path: Path) -> Optional[Exception]:
-
-            try:
-                # NOTE: S3 does not have a concept of directories, so we do not need to create one.
-                if isinstance(fs, LocalFileSystem):
-                    fs.makedirs(str(to_path.parent), exist_ok=True)
-
-                fs.put(str(from_path), str(to_path), recursive=False)
-
-                # Don't delete tensorboard logs.
-                if "events.out.tfevents" not in str(from_path):
-                    os.remove(str(from_path))
-
-            except Exception as e:
-                # Return the exception so that it can be handled in the main thread
-                return e
-
         src = [file for file in source_path.rglob("*") if file.is_file()]
         dst = [destination_path / file.relative_to(source_path) for file in src]
 
         with concurrent.futures.ThreadPoolExecutor(4) as executor:
-            results = executor.map(_copy, src, dst)
+            results = executor.map(partial(self._copy, fs=fs), src, dst)
 
         # Raise the first exception found
         exception = next((e for e in results if isinstance(e, Exception)), None)
         if exception:
-            raise exception
+            raise Exception
 
+    @staticmethod
+    def _copy(src_path: Path, dst_path: Path, fs: fsspec.AbstractFileSystem) -> Optional[Exception]:
+        try:
+            # NOTE: S3 does not have a concept of directories, so we do not need to create one.
+            if isinstance(fs, LocalFileSystem):
+                fs.makedirs(str(dst_path.parent), exist_ok=True)
+
+            fs.put(str(src_path), str(dst_path), recursive=False)
+
+            # Don't delete tensorboard logs.
+            if "events.out.tfevents" not in str(src_path):
+                os.remove(str(src_path))
+
+        except Exception as e:
+            # Return the exception so that it can be handled in the main thread
+            return e
         return None
 
 
