@@ -7,7 +7,6 @@ This project contains all utility functions to train large language models on [l
 [![Documentation Status](https://readthedocs.org/projects/lightning-LLMs/badge/?version=latest)](https://lightning-LLMs.readthedocs.io/en/latest/?badge=latest)
 [![pre-commit.ci status](https://results.pre-commit.ci/badge/github/Lightning-AI/lightning-LLMs/main.svg?badge_token=mqheL1-cTn-280Vx4cJUdg)](https://results.pre-commit.ci/latest/github/Lightning-AI/lightning-LLMs/main?badge_token=mqheL1-cTn-280Vx4cJUdg)
 
-
 ## Tests / Docs notes
 
 - We are using [Napoleon style,](https://www.sphinx-doc.org/en/master/usage/extensions/napoleon.html) and we shall use static types...
