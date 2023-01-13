@@ -8,6 +8,9 @@ from lit_llms.moving_average import MovingAverage
 
 
 class GPUMonitoringCallback(lightning.pytorch.callbacks.Callback):
+    """Monitoring the GPU utilization and memory usage per rank together with the processing time per batch to be
+    consumed by other callbacks."""
+
     def __init__(
         self,
         gpu_memory_logname: str = "gpu_stats/max_memory",

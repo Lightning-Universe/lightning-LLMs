@@ -12,6 +12,24 @@ from lit_llms.callbacks.steady_state_utils import calc_total_time_per_node, chin
 
 
 class SteadyStateDetection(lightning.pytorch.callbacks.model_summary.ModelSummary):
+    """Detects steady state in model training.
+
+    We define steady state as the point during training where the iteration
+    speed (or optionally gpu utilization) does not change anymore!
+
+    By default, requires metrics to be present in ``trainer.callback_metrics``
+    with keys:
+
+    - ``gpu_stats/utilization``: GPU Utilization in Percent
+    - ``time/seconds_per_iter``: Time per Iteration in Seconds
+    - ``time/seconds_per_iter_averaged10``: Averaged Time per Iteration
+        in Seconds over 10 Steps
+
+    Depending on the arguments specified to this callback other metrics might
+    be required as well. These metrics are provided by
+    :class:`lit_llms.callbacks.monitoring.GPUMonitoringCallback`.
+    """
+
     def __init__(
         self,
         target_loss: float,
@@ -139,7 +157,7 @@ class SteadyStateDetection(lightning.pytorch.callbacks.model_summary.ModelSummar
 
         trainer.strategy.broadcast(stop_tensor, src=0)
 
-        if compare_version("lightning", operator.ge, "2.0.0"):
+        if compare_version("lightning", operator.ge, "1.9.0"):
             global_should_stop = trainer.strategy.reduce_boolean_decision(should_stop, all=False)
         else:
             # backport of reduce_boolean_decision with all=False to lightning < 2.0.0
