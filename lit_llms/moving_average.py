@@ -12,7 +12,6 @@ class MovingAverage(torchmetrics.Metric):
     def __init__(self, window_size: int, **kwargs: Any) -> None:
         super().__init__(**kwargs)
 
-        # need to add states here globally independent of arguments for momentum and window_size to satisfy mypy
         self.add_state("sliding_window", [], persistent=True)
         self.window_size = window_size
 
