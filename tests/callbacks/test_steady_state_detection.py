@@ -4,10 +4,10 @@ from unittest.mock import MagicMock
 import lightning.pytorch.strategies
 import pytest
 import torch
-from lai_textpred.callbacks.steady_state_detection import SteadyStateDetection
-from lai_textpred.steady_state_utils import chinchilla_metric_samples
 from lightning_gpt import DeepSpeedNanoGPT
 
+from lit_llms.callbacks.steady_state_detection import SteadyStateDetection
+from lit_llms.callbacks.steady_state_utils import chinchilla_metric_samples
 from tests.helpers import setup_ddp
 
 
