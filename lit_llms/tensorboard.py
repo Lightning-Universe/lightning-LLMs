@@ -11,6 +11,7 @@ from uuid import uuid4
 import fsspec
 import lightning as L
 from fsspec.implementations.local import LocalFileSystem
+from lightning.app.utilities.exceptions import ExitAppException
 
 
 class DriveTensorBoardLogger(L.pytorch.loggers.TensorBoardLogger):
@@ -130,6 +131,7 @@ class MultiNodeLightningTrainerWithTensorboard(L.LightningFlow):
         work_cls: Type[L.LightningWork],
         num_nodes: int,
         cloud_compute: L.CloudCompute,
+        quit_tb_with_training: bool = True,
     ):
         super().__init__()
         tb_drive = L.app.storage.Drive("lit://tb_drive")
@@ -140,8 +142,13 @@ class MultiNodeLightningTrainerWithTensorboard(L.LightningFlow):
             cloud_compute=cloud_compute,
             tb_drive=tb_drive,
         )
+        self.quit_tb_with_training = quit_tb_with_training
 
     def run(self, *args: Any, **kwargs: Any) -> None:
+        if self.quit_tb_with_training and all([w.has_succeeded for w in self.multinode.ws]):
+            self.tensorboard_work.stop()
+            raise ExitAppException
+
         self.tensorboard_work.run()
         self.multinode.run(*args, **kwargs)
 
