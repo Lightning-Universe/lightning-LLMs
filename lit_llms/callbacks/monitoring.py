@@ -32,7 +32,6 @@ class GPUMonitoringCallback(lightning.pytorch.callbacks.Callback):
         self.running_utilizations_per_batch = []
 
     def _init_gpu_util_trackers(self, world_size: int):
-
         if not self.gpu_utilizations10:
             for _ in range(world_size):
                 self.gpu_utilizations10.append(MovingAverage(sliding_window_size=10, sync_on_compute=False))

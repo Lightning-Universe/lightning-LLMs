@@ -80,7 +80,6 @@ class TensorBoardWork(L.app.LightningWork):
         self.drive = drive
 
     def run(self) -> None:
-
         use_localhost = not L.app.utilities.cloud.is_running_in_cloud()
 
         local_folder = f"./tensorboard_logs/{uuid4()}"

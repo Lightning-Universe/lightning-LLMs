@@ -17,14 +17,12 @@ class MovingAverage(torchmetrics.Metric):
         self.sliding_window_size = sliding_window_size
 
     def update(self, value: torch.Tensor) -> None:
-
         self.sliding_window.append(value.detach())
 
         if len(self.sliding_window) > self.sliding_window_size:
             self.sliding_window.pop(0)
 
     def compute(self) -> torch.Tensor:
-
         result = sum(self.sliding_window) / len(self.sliding_window)
         if not isinstance(result, torch.Tensor):
             result = torch.tensor(result, device=self.device, dtype=torch.float)
