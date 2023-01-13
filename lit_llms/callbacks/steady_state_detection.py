@@ -2,7 +2,7 @@ import operator
 import warnings
 from collections import defaultdict, deque
 from functools import partial
-from typing import Any, Optional
+from typing import Any, Mapping, Optional
 
 import lightning
 import torch
@@ -36,8 +36,8 @@ class SteadyStateDetection(lightning.pytorch.callbacks.model_summary.ModelSummar
         self.rtol = rtol
         self.atol = atol
 
-        self.gpu_metrics = defaultdict(partial(deque, maxlen=moving_average_window))
-        self.iteration_speeds = deque(maxlen=moving_average_window)
+        self.gpu_metrics: Mapping[int, deque] = defaultdict(partial(deque, maxlen=moving_average_window))
+        self.iteration_speeds: deque = deque(maxlen=moving_average_window)
         self.average = average
         self.steady_state_det_mode = steady_state_det_mode
         self.stop_on_steady_state = stop_on_steady_state
@@ -155,7 +155,7 @@ class SteadyStateDetection(lightning.pytorch.callbacks.model_summary.ModelSummar
             rank_zero_only=True,
         )
 
-    def _is_steady_state_utilization(self):
+    def _is_steady_state_utilization(self) -> bool:
         steady_states = []
         for i, v in self.gpu_metrics.items():
             if self.gpu_metrics[i].maxlen == len(self.gpu_metrics[i]):
@@ -165,13 +165,13 @@ class SteadyStateDetection(lightning.pytorch.callbacks.model_summary.ModelSummar
 
     def _is_steady_state_iteration_speed(
         self,
-    ):
+    ) -> bool:
         if len(self.iteration_speeds) == self.iteration_speeds.maxlen:
             return is_steady_state(*self.iteration_speeds, rtol=self.rtol, atol=self.atol)
         return False
 
     @staticmethod
-    def _average_postfix(average: Optional[float] = None):
+    def _average_postfix(average: Optional[float] = None) -> str:
         if average is None:
             return ""
         return f"_averaged{average}"

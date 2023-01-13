@@ -1,5 +1,5 @@
 import time
-from typing import Any, Dict
+from typing import Any, Dict, List, Optional, Union
 
 import lightning
 import torch
@@ -16,10 +16,10 @@ class GPUMonitoringCallback(lightning.pytorch.callbacks.Callback):
     ):
 
         super().__init__()
-        self.last_batch_start_time = None
-        self.gpu_utilizations10 = []
-        self.gpu_utilizations100 = []
-        self.running_utilizations_per_batch = []
+        self.last_batch_start_time: Optional[float] = None
+        self.gpu_utilizations10: List[MovingAverage] = []
+        self.gpu_utilizations100: List[MovingAverage] = []
+        self.running_utilizations_per_batch: List[Union[torch.Tensor, float]] = []
 
         self.seconds_per_iter10 = MovingAverage(sliding_window_size=10, sync_on_compute=False)
         self.seconds_per_iter100 = MovingAverage(sliding_window_size=100, sync_on_compute=False)
@@ -28,10 +28,10 @@ class GPUMonitoringCallback(lightning.pytorch.callbacks.Callback):
         self.gpu_util_logname = gpu_util_logname
         self.time_per_batch_logname = time_per_batch_logname
 
-    def _reset_running_utilizations(self):
+    def _reset_running_utilizations(self) -> None:
         self.running_utilizations_per_batch = []
 
-    def _init_gpu_util_trackers(self, world_size: int):
+    def _init_gpu_util_trackers(self, world_size: int) -> None:
         if not self.gpu_utilizations10:
             for _ in range(world_size):
                 self.gpu_utilizations10.append(MovingAverage(sliding_window_size=10, sync_on_compute=False))
@@ -41,8 +41,8 @@ class GPUMonitoringCallback(lightning.pytorch.callbacks.Callback):
 
     def on_train_batch_start(
         self,
-        trainer: "lightning.pytorch.Trainer",
-        pl_module: "lightning.pytorch.LightningModule",
+        trainer: lightning.pytorch.Trainer,
+        pl_module: lightning.pytorch.LightningModule,
         batch: Any,
         batch_idx: int,
     ) -> None:
@@ -53,6 +53,7 @@ class GPUMonitoringCallback(lightning.pytorch.callbacks.Callback):
         # only calc time after first batch
         if batch_idx:
             curr_time = time.time()
+            assert self.last_batch_start_time is not None
             time_delta = curr_time - self.last_batch_start_time
             avg_time_delta = torch.tensor(trainer.strategy.reduce(time_delta), dtype=torch.float)
             self.seconds_per_iter10.update(avg_time_delta)
@@ -114,22 +115,44 @@ class GPUMonitoringCallback(lightning.pytorch.callbacks.Callback):
         self._get_current_utilisation(trainer)
         self.last_batch_start_time = time.time()
 
-    def on_train_batch_end(self, trainer, pl_module, outputs, batch, batch_idx):
+    def on_train_batch_end(
+        self,
+        trainer: lightning.pytorch.Trainer,
+        pl_module: lightning.pytorch.LightningModule,
+        outputs: Any,
+        batch: Any,
+        batch_idx: int,
+    ) -> None:
         self._get_current_utilisation(trainer)
 
-    def on_before_backward(self, trainer, pl_module, loss):
+    def on_before_backward(
+        self, trainer: lightning.pytorch.Trainer, pl_module: lightning.pytorch.LightningModule, loss: torch.Tensor
+    ) -> None:
         self._get_current_utilisation(trainer)
 
-    def on_after_backward(self, trainer, pl_module):
+    def on_after_backward(
+        self, trainer: lightning.pytorch.Trainer, pl_module: lightning.pytorch.LightningModule
+    ) -> None:
         self._get_current_utilisation(trainer)
 
-    def on_before_optimizer_step(self, trainer, pl_module, optimizer, opt_idx=0):
+    def on_before_optimizer_step(
+        self,
+        trainer: lightning.pytorch.Trainer,
+        pl_module: lightning.pytorch.LightningModule,
+        optimizer: torch.optim.Optimizer,
+        opt_idx: int = 0,
+    ) -> None:
         self._get_current_utilisation(trainer)
 
-    def on_before_zero_grad(self, trainer, pl_module, optimizer):
+    def on_before_zero_grad(
+        self,
+        trainer: lightning.pytorch.Trainer,
+        pl_module: lightning.pytorch.LightningModule,
+        optimizer: torch.optim.Optimizer,
+    ) -> None:
         self._get_current_utilisation(trainer)
 
-    def _get_current_utilisation(self, trainer):
+    def _get_current_utilisation(self, trainer: lightning.pytorch.Trainer) -> None:
         self.running_utilizations_per_batch.append(
             torch.tensor(
                 torch.cuda.utilization(),
@@ -140,10 +163,10 @@ class GPUMonitoringCallback(lightning.pytorch.callbacks.Callback):
 
     def on_save_checkpoint(
         self,
-        trainer: "lightning.pytorch.Trainer",
-        pl_module: "lightning.pytorch.LightningModule",
+        trainer: lightning.pytorch.Trainer,
+        pl_module: lightning.pytorch.LightningModule,
         checkpoint: Dict[str, Any],
-    ):
+    ) -> None:
         for name_str in ("gpu_utilizations10", "gpu_utilizations100"):
             checkpoint[name_str] = [metric.state_dict() for metric in getattr(self, name_str)]
 
@@ -152,10 +175,10 @@ class GPUMonitoringCallback(lightning.pytorch.callbacks.Callback):
 
     def on_load_checkpoint(
         self,
-        trainer: "lightning.pytorch.Trainer",
-        pl_module: "lightning.pytorch.LightningModule",
+        trainer: lightning.pytorch.Trainer,
+        pl_module: lightning.pytorch.LightningModule,
         checkpoint: Dict[str, Any],
-    ):
+    ) -> None:
         self._init_gpu_util_trackers(trainer.world_size)
         for name_str in ("gpu_utilizations10", "gpu_utilizations100"):
             for metric, state in zip(getattr(self, name_str), checkpoint.pop(name_str, [])):
