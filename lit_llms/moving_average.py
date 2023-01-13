@@ -12,14 +12,14 @@ class MovingAverage(torchmetrics.Metric):
     def __init__(self, window_size: int, **kwargs: Any) -> None:
         super().__init__(**kwargs)
 
-        # need to add states here globally independent of arguments for momentum and sliding_window_size to satisfy mypy
+        # need to add states here globally independent of arguments for momentum and window_size to satisfy mypy
         self.add_state("sliding_window", [], persistent=True)
-        self.sliding_window_size = window_size
+        self.window_size = window_size
 
     def update(self, value: torch.Tensor) -> None:
         self.sliding_window.append(value.detach())
 
-        if len(self.sliding_window) > self.sliding_window_size:
+        if len(self.sliding_window) > self.window_size:
             self.sliding_window.pop(0)
 
     def compute(self) -> torch.Tensor:
@@ -29,7 +29,7 @@ class MovingAverage(torchmetrics.Metric):
         return result
 
     def get_extra_state(self) -> Any:
-        return {"sliding_window_size": self.sliding_window_size}
+        return {"window_size": self.window_size}
 
     def set_extra_state(self, state: Any) -> None:
-        self.sliding_window_size = state.pop("sliding_window_size")
+        self.window_size = state.pop("window_size")

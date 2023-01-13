@@ -5,8 +5,8 @@ from lit_llms.moving_average import MovingAverage
 
 
 def test_moving_average():
-    ma = MovingAverage(sliding_window_size=5)
-    assert ma.sliding_window_size == 5
+    ma = MovingAverage(window_size=5)
+    assert ma.window_size == 5
     assert ma.sliding_window == []
 
     # not yet updated -> division by length of sliding window is division by zero
@@ -86,11 +86,11 @@ def test_moving_average_checkpoint():
         torch.tensor(9.0),
         torch.tensor(10.0),
     ]
-    assert state_dict["_extra_state"]["sliding_window_size"] == 42
+    assert state_dict["_extra_state"]["window_size"] == 42
 
     ma2 = MovingAverage(5)
     ma2.load_state_dict(state_dict)
 
-    assert ma2.sliding_window_size == 42
+    assert ma2.window_size == 42
     assert len(ma2.sliding_window) == 6
     ma2.update(torch.tensor(11.0))

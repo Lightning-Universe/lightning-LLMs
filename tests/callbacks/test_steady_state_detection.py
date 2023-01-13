@@ -22,12 +22,12 @@ def test_steady_state_error():
 
 
 def test_num_samples_required():
-    assert SteadyStateDetection(target_loss=0.1, num_params=100).num_samples_required == chinchilla_metric_samples(
-        0.1, 100
-    )
+    assert SteadyStateDetection(
+        target_loss=4.0, num_params=100000000
+    ).num_samples_required == chinchilla_metric_samples(4.0, 100000000)
 
     with pytest.raises(ValueError, match="Cannot calculate the number of samples"):
-        _ = SteadyStateDetection(target_loss=0.1).num_samples_required
+        _ = SteadyStateDetection(target_loss=4.0).num_samples_required
 
 
 @pytest.mark.parametrize(
@@ -85,8 +85,8 @@ def _test_steady_state_should_stop(
 ):
     setup_ddp(rank, world_size)
     cb = SteadyStateDetection(
-        target_loss=0.1,
-        num_params=10,
+        target_loss=4.0,
+        num_params=1000000000,
         stop_on_steady_state=should_stop,
         steady_state_steps_before_stop=num_steps_after_steady_state,
         gpu_util_logname=gpu_util_logname,

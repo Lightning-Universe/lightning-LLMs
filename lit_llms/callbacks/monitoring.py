@@ -24,8 +24,8 @@ class GPUMonitoringCallback(lightning.pytorch.callbacks.Callback):
         self.gpu_utilizations100: List[MovingAverage] = []
         self.running_utilizations_per_batch: List[Union[torch.Tensor, float]] = []
 
-        self.seconds_per_iter10 = MovingAverage(sliding_window_size=10, sync_on_compute=False)
-        self.seconds_per_iter100 = MovingAverage(sliding_window_size=100, sync_on_compute=False)
+        self.seconds_per_iter10 = MovingAverage(window_size=10, sync_on_compute=False)
+        self.seconds_per_iter100 = MovingAverage(window_size=100, sync_on_compute=False)
 
         self.gpu_memory_logname = gpu_memory_logname
         self.gpu_util_logname = gpu_util_logname
@@ -37,10 +37,10 @@ class GPUMonitoringCallback(lightning.pytorch.callbacks.Callback):
     def _init_gpu_util_trackers(self, world_size: int) -> None:
         if not self.gpu_utilizations10:
             for _ in range(world_size):
-                self.gpu_utilizations10.append(MovingAverage(sliding_window_size=10, sync_on_compute=False))
+                self.gpu_utilizations10.append(MovingAverage(window_size=10, sync_on_compute=False))
         if not self.gpu_utilizations100:
             for _ in range(world_size):
-                self.gpu_utilizations100.append(MovingAverage(sliding_window_size=100, sync_on_compute=False))
+                self.gpu_utilizations100.append(MovingAverage(window_size=100, sync_on_compute=False))
 
     def on_train_batch_start(
         self,

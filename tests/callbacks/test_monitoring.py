@@ -18,8 +18,8 @@ def test_custom_monitoring_callback_init():
     assert callback.running_utilizations_per_batch == []
     assert isinstance(callback.seconds_per_iter10, MovingAverage)
     assert isinstance(callback.seconds_per_iter100, MovingAverage)
-    assert callback.seconds_per_iter10.sliding_window_size == 10
-    assert callback.seconds_per_iter100.sliding_window_size == 100
+    assert callback.seconds_per_iter10.window_size == 10
+    assert callback.seconds_per_iter100.window_size == 100
     assert not callback.seconds_per_iter10.sync_on_compute
     assert not callback.seconds_per_iter100.sync_on_compute
 
@@ -29,8 +29,8 @@ def test_custom_monitoring_callback_init():
     for i in range(15):
         assert isinstance(callback.gpu_utilizations10[i], MovingAverage)
         assert isinstance(callback.gpu_utilizations100[i], MovingAverage)
-        assert callback.gpu_utilizations10[i].sliding_window_size == 10
-        assert callback.gpu_utilizations100[i].sliding_window_size == 100
+        assert callback.gpu_utilizations10[i].window_size == 10
+        assert callback.gpu_utilizations100[i].window_size == 100
         assert not callback.gpu_utilizations10[i].sync_on_compute
         assert not callback.gpu_utilizations100[i].sync_on_compute
 
@@ -210,8 +210,8 @@ def test_monitoring_checkpoint(world_size):
     cb2.on_load_checkpoint(trainer, mock.MagicMock(), ckpt)
     assert len(cb2.gpu_utilizations10) == world_size
     assert len(cb2.gpu_utilizations100) == world_size
-    assert cb2.seconds_per_iter10.sliding_window_size == 10
-    assert cb2.seconds_per_iter100.sliding_window_size == 100
+    assert cb2.seconds_per_iter10.window_size == 10
+    assert cb2.seconds_per_iter100.window_size == 100
 
     for i in range(world_size):
         assert len(cb2.gpu_utilizations10[i].sliding_window) == 0
@@ -235,8 +235,8 @@ def test_monitoring_checkpoint(world_size):
     cb2.on_load_checkpoint(trainer, mock.MagicMock(), ckpt2)
     assert len(cb2.gpu_utilizations10) == world_size
     assert len(cb2.gpu_utilizations100) == world_size
-    assert cb2.seconds_per_iter10.sliding_window_size == 10
-    assert cb2.seconds_per_iter100.sliding_window_size == 100
+    assert cb2.seconds_per_iter10.window_size == 10
+    assert cb2.seconds_per_iter100.window_size == 100
 
     for i in range(world_size):
         assert len(cb2.gpu_utilizations10[i].sliding_window) == 1
