@@ -141,7 +141,7 @@ class SteadyStateDetection(lightning.pytorch.callbacks.model_summary.ModelSummar
             pl_module.log("estimated_total_time", tpn, sync_dist=False, rank_zero_only=True)
 
             if self.stop_on_steady_state and self.steady_state_stepped >= self.steady_state_steps_before_stop:
-                print(
+                message_str = (
                     "Stopping training due to steady state achieved! "
                     f"Projected Time for training: {tpn:} hours on "
                     f"{trainer.num_nodes} nodes with a total of "
@@ -150,6 +150,9 @@ class SteadyStateDetection(lightning.pytorch.callbacks.model_summary.ModelSummar
                     f"The GPU utilization is {metrics[self.gpu_util_logname + '_rank0' + self._average_postfix(10)]}% "
                     f"on average."
                 )
+                memory_key = "gpu_stats/max_memory_rank0"
+                if memory_key in metrics:
+                    message_str += f"Maximumally used GPU Memory: {metrics[memory_key]} GB"
                 should_stop = True
 
         # only rank0 decides as this is the only one that has the metrics
