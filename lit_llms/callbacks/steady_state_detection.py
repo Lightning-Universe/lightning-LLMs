@@ -150,9 +150,9 @@ class SteadyStateDetection(lightning.pytorch.callbacks.model_summary.ModelSummar
                     f"The GPU utilization is {metrics[self.gpu_util_logname + '_rank0' + self._average_postfix(10)]}% "
                     f"on average."
                 )
-                memory_key = 'gpu_stats/max_memory_rank0'
+                memory_key = "gpu_stats/max_memory_rank0"
                 if memory_key in metrics:
-                    message_str += f'Maximumally used GPU Memory: {metrics[memory_key]} GB'
+                    message_str += f"Maximumally used GPU Memory: {metrics[memory_key]} GB"
                 should_stop = True
 
         # only rank0 decides as this is the only one that has the metrics
