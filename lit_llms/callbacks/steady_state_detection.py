@@ -2,7 +2,7 @@ import operator
 import warnings
 from collections import defaultdict, deque
 from functools import partial
-from typing import Any, Mapping, Optional
+from typing import Any, Mapping, Optional, cast
 
 import lightning
 import torch
@@ -83,7 +83,7 @@ class SteadyStateDetection(lightning.pytorch.callbacks.model_summary.ModelSummar
         if self.num_params is None:
             raise ValueError("Cannot calculate the number of samples without the number of model parameters!")
 
-        return chinchilla_metric_samples(self.target_loss, self.num_params)
+        return chinchilla_metric_samples(cast(float, self.target_loss), self.num_params)
 
     def on_train_batch_start(
         self,
