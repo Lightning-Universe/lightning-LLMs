@@ -204,4 +204,3 @@ class SteadyStateDetection(lightning.pytorch.callbacks.model_summary.ModelSummar
         if average is None:
             return ""
         return f"_averaged{average}"
-
