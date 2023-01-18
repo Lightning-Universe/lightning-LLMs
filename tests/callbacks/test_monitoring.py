@@ -1,7 +1,6 @@
 import random
 from unittest import mock
 
-import lightning
 import pytest
 import torch
 
