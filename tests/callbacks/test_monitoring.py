@@ -8,10 +8,12 @@ import torch
 from lit_llms.callbacks import GPUMonitoringCallback
 from lit_llms.moving_average import MovingAverage
 from tests.helpers import setup_ddp
+
 try:
     from lightning.lite.utilities.distributed import _all_gather_ddp_if_available
 except ImportError:
     from lightning.fabric.utilities.distributed import _all_gather_ddp_if_available
+
 
 def test_custom_monitoring_callback_init():
     callback = GPUMonitoringCallback()
