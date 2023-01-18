@@ -42,6 +42,7 @@ class GPUMonitoringCallback(lightning.pytorch.callbacks.Callback):
             for _ in range(world_size):
                 self.gpu_utilizations100.append(MovingAverage(window_size=100, sync_on_compute=False))
 
+    @torch.no_grad()
     def on_train_batch_start(
         self,
         trainer: lightning.pytorch.Trainer,
@@ -118,6 +119,7 @@ class GPUMonitoringCallback(lightning.pytorch.callbacks.Callback):
         self._get_current_utilisation(trainer)
         self.last_batch_start_time = time.time()
 
+    @torch.no_grad()
     def on_train_batch_end(
         self,
         trainer: lightning.pytorch.Trainer,
@@ -128,16 +130,19 @@ class GPUMonitoringCallback(lightning.pytorch.callbacks.Callback):
     ) -> None:
         self._get_current_utilisation(trainer)
 
+    @torch.no_grad()
     def on_before_backward(
         self, trainer: lightning.pytorch.Trainer, pl_module: lightning.pytorch.LightningModule, loss: torch.Tensor
     ) -> None:
         self._get_current_utilisation(trainer)
 
+    @torch.no_grad()
     def on_after_backward(
         self, trainer: lightning.pytorch.Trainer, pl_module: lightning.pytorch.LightningModule
     ) -> None:
         self._get_current_utilisation(trainer)
 
+    @torch.no_grad()
     def on_before_optimizer_step(
         self,
         trainer: lightning.pytorch.Trainer,
@@ -147,6 +152,7 @@ class GPUMonitoringCallback(lightning.pytorch.callbacks.Callback):
     ) -> None:
         self._get_current_utilisation(trainer)
 
+    @torch.no_grad()
     def on_before_zero_grad(
         self,
         trainer: lightning.pytorch.Trainer,
