@@ -157,7 +157,7 @@ class SteadyStateDetection(lightning.pytorch.callbacks.model_summary.ModelSummar
 
             memory_key = "gpu_stats/max_memory_rank0"
             if memory_key in metrics:
-                stop_message += f"Maximumally used GPU Memory: {metrics[memory_key]} GB"
+                stop_message += f"Maximally used GPU Memory: {metrics[memory_key]} GB"
 
             if self.stop_on_steady_state and self.steady_state_stepped >= self.steady_state_steps_before_stop:
                 print(stop_message)
