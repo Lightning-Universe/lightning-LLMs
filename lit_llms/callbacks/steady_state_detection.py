@@ -2,7 +2,7 @@ import operator
 import warnings
 from collections import defaultdict, deque
 from functools import partial
-from typing import Any, Mapping, Optional, cast
+from typing import Any, cast, Mapping, Optional
 
 import lightning
 import torch
