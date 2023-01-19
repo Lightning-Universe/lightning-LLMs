@@ -145,7 +145,7 @@ class SteadyStateDetection(lightning.pytorch.callbacks.model_summary.ModelSummar
 
                 pl_module.log("estimated_total_time", tpn, sync_dist=False, rank_zero_only=True)
 
-                stop_message += f"Estimated total time: {tpn:.2f} hours!"
+                stop_message += f"Estimated total time: {float(tpn.item()):.2f} hours!"
 
             stop_message += (
                 f"Training on {trainer.num_nodes} nodes with a total of "

@@ -100,14 +100,14 @@ def _test_steady_state_should_stop(
     trainer.world_size = world_size
     trainer.strategy.reduce = lambda x, **kwargs: x
     trainer.callback_metrics = {
-        time_per_batch_logname: 0.1,
-        f"{time_per_batch_logname}_averaged10": 0.1,
+        time_per_batch_logname: torch.tensor(0.1),
+        f"{time_per_batch_logname}_averaged10": torch.tensor(0.1),
     }
     for j in range(world_size):
         trainer.callback_metrics.update(
             {
-                f"{gpu_util_logname}_rank{j}": 0.1,
-                f"{gpu_util_logname}_rank{j}_averaged10": 0.1,
+                f"{gpu_util_logname}_rank{j}": torch.tensor(0.1),
+                f"{gpu_util_logname}_rank{j}_averaged10": torch.tensor(0.1),
             }
         )
 
