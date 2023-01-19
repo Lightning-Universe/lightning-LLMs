@@ -1,13 +1,17 @@
 import random
 from unittest import mock
 
-import lightning
 import pytest
 import torch
 
 from lit_llms.callbacks import GPUMonitoringCallback
 from lit_llms.moving_average import MovingAverage
 from tests.helpers import setup_ddp
+
+try:
+    from lightning.lite.utilities.distributed import _all_gather_ddp_if_available
+except ImportError:
+    from lightning.fabric.utilities.distributed import _all_gather_ddp_if_available
 
 
 def test_custom_monitoring_callback_init():
@@ -66,7 +70,7 @@ def _custom_monitoring_callback_train_mock(
     trainer.global_rank = rank
     strategy = mock.MagicMock()
     strategy.root_device = torch.device("cpu")
-    strategy.all_gather = lightning.lite.utilities.distributed._all_gather_ddp_if_available
+    strategy.all_gather = _all_gather_ddp_if_available
     trainer.strategy = strategy
 
     logger = mock.MagicMock()

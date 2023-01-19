@@ -2,7 +2,7 @@ import operator
 import warnings
 from collections import defaultdict, deque
 from functools import partial
-from typing import Any, Mapping, Optional
+from typing import Any, cast, Mapping, Optional
 
 import lightning
 import torch
@@ -32,7 +32,7 @@ class SteadyStateDetection(lightning.pytorch.callbacks.model_summary.ModelSummar
 
     def __init__(
         self,
-        target_loss: float,
+        target_loss: Optional[float] = None,
         batch_size: Optional[int] = None,
         num_params: Optional[int] = None,
         rtol: float = 0.015,
@@ -83,7 +83,7 @@ class SteadyStateDetection(lightning.pytorch.callbacks.model_summary.ModelSummar
         if self.num_params is None:
             raise ValueError("Cannot calculate the number of samples without the number of model parameters!")
 
-        return chinchilla_metric_samples(self.target_loss, self.num_params)
+        return chinchilla_metric_samples(cast(float, self.target_loss), self.num_params)
 
     def on_train_batch_start(
         self,
@@ -96,6 +96,7 @@ class SteadyStateDetection(lightning.pytorch.callbacks.model_summary.ModelSummar
             model_summary = self._summary(trainer, pl_module)
             self.num_params = model_summary.trainable_parameters
 
+    @torch.no_grad()
     def on_train_batch_end(
         self,
         trainer: lightning.pytorch.Trainer,
@@ -118,11 +119,11 @@ class SteadyStateDetection(lightning.pytorch.callbacks.model_summary.ModelSummar
                 metric_name_cuda = f"{self.gpu_util_logname}_rank{i}" + self._average_postfix(self.average)
 
                 if metric_name_cuda in trainer.callback_metrics:
-                    self.gpu_metrics[i].append(trainer.callback_metrics[metric_name_cuda])
+                    self.gpu_metrics[i].append(trainer.callback_metrics[metric_name_cuda].detach().cpu())
 
             metric_name_speed = self.time_per_batch_logname + self._average_postfix(self.average)
             if metric_name_speed in trainer.callback_metrics:
-                self.iteration_speeds.append(trainer.callback_metrics[metric_name_speed])
+                self.iteration_speeds.append(trainer.callback_metrics[metric_name_speed].detach().cpu())
 
             self.steady_state_achieved = self._steady_state_func()
 
@@ -131,28 +132,35 @@ class SteadyStateDetection(lightning.pytorch.callbacks.model_summary.ModelSummar
         if self.steady_state_achieved:
             speed_per_batch_averaged = metrics[self.time_per_batch_logname + self._average_postfix(10)]
             # reflect current number of batches
-            tpn = calc_total_time_per_node(
-                self.num_samples_required - trainer.global_step * self.batch_size * trainer.world_size,
-                trainer.world_size,
-                self.batch_size,
-                speed_per_batch_averaged,
+
+            stop_message = "Stopping training due to steady state achieved! "
+
+            if self.target_loss is not None:
+                tpn = calc_total_time_per_node(
+                    self.num_samples_required - trainer.global_step * self.batch_size * trainer.world_size,
+                    trainer.world_size,
+                    self.batch_size,
+                    speed_per_batch_averaged,
+                )
+
+                pl_module.log("estimated_total_time", tpn, sync_dist=False, rank_zero_only=True)
+
+                stop_message += f"Estimated total time: {float(tpn):.2f} hours!"
+
+            stop_message += (
+                f"Training on {trainer.num_nodes} nodes with a total of "
+                f"{trainer.world_size} parallel training processes! "
+                f"Speed / Batch (bs={self.batch_size}): {speed_per_batch_averaged} seconds. "
+                f"The GPU utilization is {metrics[self.gpu_util_logname + '_rank0' + self._average_postfix(10)]}% "
+                f"on average."
             )
 
-            pl_module.log("estimated_total_time", tpn, sync_dist=False, rank_zero_only=True)
+            memory_key = "gpu_stats/max_memory_rank0"
+            if memory_key in metrics:
+                stop_message += f"Maximally used GPU Memory: {metrics[memory_key]} GB"
 
             if self.stop_on_steady_state and self.steady_state_stepped >= self.steady_state_steps_before_stop:
-                message_str = (
-                    "Stopping training due to steady state achieved! "
-                    f"Projected Time for training: {tpn:} hours on "
-                    f"{trainer.num_nodes} nodes with a total of "
-                    f"{trainer.world_size} parallel training processes! "
-                    f"Speed / Batch (bs={self.batch_size}): {speed_per_batch_averaged} seconds. "
-                    f"The GPU utilization is {metrics[self.gpu_util_logname + '_rank0' + self._average_postfix(10)]}% "
-                    f"on average."
-                )
-                memory_key = "gpu_stats/max_memory_rank0"
-                if memory_key in metrics:
-                    message_str += f"Maximumally used GPU Memory: {metrics[memory_key]} GB"
+                print(stop_message)
                 should_stop = True
 
         # only rank0 decides as this is the only one that has the metrics
