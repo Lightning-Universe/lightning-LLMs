@@ -105,7 +105,6 @@ class SteadyStateDetection(lightning.pytorch.callbacks.model_summary.ModelSummar
         batch: Any,
         batch_idx: int,
     ) -> None:
-
         if self.batch_size is None:
             self.batch_size = lightning.pytorch.utilities.data.extract_batch_size(batch)
 
