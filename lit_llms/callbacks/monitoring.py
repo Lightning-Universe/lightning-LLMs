@@ -17,7 +17,6 @@ class GPUMonitoringCallback(lightning.pytorch.callbacks.Callback):
         gpu_util_logname: str = "gpu_stats/utilization",
         time_per_batch_logname: str = "time/seconds_per_iter",
     ):
-
         super().__init__()
         self.last_batch_start_time: Optional[float] = None
         self.gpu_utilizations10: List[MovingAverage] = []
