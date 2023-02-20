@@ -27,7 +27,7 @@ jobs:
       actions-ref: v0.6.0
       artifact-name: dist-packages-${{ github.sha }}
       import-name: "lit_llms"
-      strategy-matrix: |
+      testing-matrix: |
         {
           "os": ["ubuntu-20.04", "macos-11", "windows-2022"],
           "python-version": ["3.8", "3.10"]
