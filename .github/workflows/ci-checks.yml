@@ -24,6 +24,7 @@ jobs:
   check-package:
     uses: Lightning-AI/utilities/.github/workflows/check-package.yml@v0.6.0
     with:
+      actions-ref: v0.6.0
       artifact-name: dist-packages-${{ github.sha }}
       import-name: "lit_llms"
       strategy-matrix: |
